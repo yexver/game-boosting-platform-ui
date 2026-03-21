@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取交易流水记录
 export function getTransactionHistory(params) {
   return request({
-    url: '/server-user/transaction/transactions',
+    url: '/server-account/transaction/transactions',
     method: 'get',
     params: {
       userId: params.userId,

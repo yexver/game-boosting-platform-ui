@@ -155,7 +155,7 @@
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getTransactionHistory } from '@/api/user/index'
+import { getTransactionHistory } from '@/api/account'
 import * as echarts from 'echarts'
 import { useUserStore } from '@/stores'
 
