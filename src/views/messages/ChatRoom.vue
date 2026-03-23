@@ -188,7 +188,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Picture, Close } from '@element-plus/icons-vue'
@@ -197,7 +197,7 @@ import {
   getChatMessages,
   sendChatMessage,
 } from '@/api/messages/messages'
-import { useUserStore } from '@/stores'
+import { useUserStore, useMessageStore } from '@/stores'
 import settings from '@/settings'
 import systemLogo from '@/assets/images/logo01.png'
 import defaultAvatar from '@/assets/images/avatar.jpeg'
@@ -205,6 +205,7 @@ import defaultAvatar from '@/assets/images/avatar.jpeg'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 
 // 聊天用户信息
 const chatUser = ref({})
@@ -425,6 +426,31 @@ function getAvatarUrl(avatar) {
 onMounted(async () => {
   await loadChatUserInfo()
   await loadChatMessages()
+
+  // 监听新消息，实时追加到聊天列表
+  messageStore.setNewMessageListener((newMsg) => {
+    const chatUserId = route.params.userId
+    // 只处理当前聊天对象发来的消息
+    if (
+      newMsg &&
+      newMsg.senderId &&
+      String(newMsg.senderId) === String(chatUserId)
+    ) {
+      messages.value.push({
+        id: newMsg.id,
+        content: newMsg.content,
+        senderId: newMsg.senderId,
+        messageType: newMsg.messageType,
+        fileUrl: newMsg.fileUrl,
+        createdAt: newMsg.createdAt,
+      })
+      nextTick(() => scrollToBottom())
+    }
+  })
+})
+
+onUnmounted(() => {
+  messageStore.setNewMessageListener(null)
 })
 </script>
 

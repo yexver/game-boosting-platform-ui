@@ -115,7 +115,9 @@
             class="nav-link"
             active-class="active-link"
           >
-            <el-icon><Message /></el-icon>
+            <el-badge :value="messageStore.unreadCount" :hidden="messageStore.unreadCount === 0" :max="99">
+              <el-icon><Message /></el-icon>
+            </el-badge>
             <span>消息</span>
           </router-link>
         </li>
@@ -126,7 +128,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useUserStore } from '@/stores'
+import { useUserStore, useMessageStore } from '@/stores'
 import { useRouter } from 'vue-router'
 import settings from '@/settings'
 import {
@@ -145,6 +147,7 @@ import {
 
 const router = useRouter()
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 
 // 计算属性：检查用户是否已认证
 const isAuthenticated = computed(() => {

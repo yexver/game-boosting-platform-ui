@@ -7,6 +7,15 @@
           返回首页
         </el-button>
         <h2>消息中心</h2>
+        <div class="ws-status">
+          <span
+            class="status-dot"
+            :class="{ connected: messageStore.wsConnected }"
+          ></span>
+          <span class="status-text">{{
+            messageStore.wsConnected ? '实时推送已连接' : '实时推送已断开'
+          }}</span>
+        </div>
       </div>
       <div class="header-right">
         <el-button type="primary" @click="markAllAsRead">全部已读</el-button>
@@ -152,8 +161,9 @@
 </template>
 
 <script setup>
-import { ref, computed, defineOptions, onMounted } from 'vue'
+import { ref, computed, defineOptions, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import {
   Bell,
   User,
@@ -161,17 +171,16 @@ import {
   ArrowLeft,
   ChatDotRound,
 } from '@element-plus/icons-vue'
-import {
-  fetchMessages,
-  markMessageAsRead,
-  markAllMessagesAsRead,
-} from '@/api/messages/messages'
+import { useMessageStore } from '@/stores'
 
 defineOptions({ name: 'MessagesPage' })
 
 const router = useRouter()
+const messageStore = useMessageStore()
 const activeTab = ref('all')
-const messages = ref([])
+
+// 直接使用 store 中的消息引用（避免本地副本导致不同步）
+const messages = computed(() => messageStore.messages)
 
 // 根据发送者类型获取发送者名称
 const getSenderName = (message) => {
@@ -188,26 +197,31 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
-const loadMessages = async () => {
-  const res = await fetchMessages({
-    page: currentPage.value,
-    pageSize: pageSize.value,
-  })
-  total.value = Number(res.data?.total) || 0
-
-  // 直接使用消息列表，因为现在只有一个用户
-  const messageList = Array.isArray(res.data?.list) ? res.data.list : []
-  console.log('res', res)
-
-  messages.value = messageList.map((msg) => ({
-    ...msg,
-    isRead: !!msg.isRead,
-    createdAt: msg.createdAt,
-  }))
+// 加载消息
+const loadMessages = async (page = 1, size = pageSize.value) => {
+  try {
+    const res = await messageStore.loadMessages(page, size)
+    total.value = messageStore.total
+    pageSize.value = messageStore.pageSize
+    currentPage.value = messageStore.currentPage
+  } catch (error) {
+    console.error('加载消息失败:', error)
+  }
 }
 
 onMounted(() => {
   loadMessages()
+
+  // 监听新消息 - 由 store 统一处理，页面组件只更新 UI 相关状态
+  messageStore.setNewMessageListener((newMsg) => {
+    console.log('收到新消息推送:', newMsg)
+    ElMessage.success('收到新消息')
+  })
+})
+
+onUnmounted(() => {
+  // 组件销毁时断开 WebSocket（如果不需要在其他页面保持连接）
+  // messageStore.disconnectWs()
 })
 
 const filteredMessages = computed(() => messages.value)
@@ -236,21 +250,17 @@ const formatTime = (time) => {
 }
 
 const markAsRead = async (messageId) => {
-  await markMessageAsRead(messageId)
-  const msg = messages.value.find((m) => m.id === messageId)
-  if (msg) msg.isRead = true
+  await messageStore.markAsRead(messageId)
 }
 
 const markAllAsRead = async () => {
-  await markAllMessagesAsRead()
-  messages.value.forEach((msg) => {
-    msg.isRead = true
-  })
+  await messageStore.markAllAsRead()
+  total.value = 0
 }
 
 const handlePageChange = (page) => {
   currentPage.value = page
-  loadMessages()
+  loadMessages(page)
 }
 
 // 返回首页
@@ -295,6 +305,30 @@ const handleMessageClick = async (message) => {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.ws-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #909399;
+  padding: 4px 12px;
+  background: #f5f7fa;
+  border-radius: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #909399;
+  transition: background 0.3s;
+}
+
+.status-dot.connected {
+  background: #67c23a;
+  box-shadow: 0 0 6px rgba(103, 194, 58, 0.5);
 }
 
 .back-btn {

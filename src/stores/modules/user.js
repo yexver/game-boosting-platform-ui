@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { login, register, logout, getInfo } from '@/api/login/login'
 import { getLocalToken, setLocalToken, removeLocalToken } from '@/utils/auth'
+import { useMessageStore } from './message'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getLocalToken())
@@ -33,6 +34,13 @@ export const useUserStore = defineStore('user', () => {
           //获取用户信息
           GetInfo()
             .then((res) => {
+              // 登录成功后连接 WebSocket
+              try {
+                const messageStore = useMessageStore()
+                messageStore.initWebSocket()
+              } catch (e) {
+                console.warn('WebSocket 初始化跳过:', e)
+              }
               resolve(res)
             })
             .catch((error) => {
@@ -105,6 +113,13 @@ export const useUserStore = defineStore('user', () => {
           roles.value = []
           permissions.value = []
           removeLocalToken()
+          // 退出时断开 WebSocket
+          try {
+            const messageStore = useMessageStore()
+            messageStore.disconnectWs()
+          } catch (e) {
+            console.warn('WebSocket 断开跳过:', e)
+          }
           resolve()
         })
         .catch((error) => {
