@@ -167,6 +167,13 @@ class WebSocketManager {
 
   // 计划重连
   scheduleReconnect() {
+    // 未登录时不进行重连
+    const token = getLocalToken()
+    if (!token) {
+      console.log('WebSocket: 未登录，停止重连')
+      return
+    }
+
     if (this.reconnectTimer) {
       return
     }

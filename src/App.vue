@@ -5,17 +5,18 @@ import locale from '@/assets/locale/cn' // 自己创建的配置
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 // 合并默认中文 + 自定义设置
 zhCn.el.pagination = Object.assign(zhCn.el.pagination, locale.el.pagination)
-import { useMessageStore } from '@/stores'
+import { useMessageStore, useUserStore } from '@/stores'
 
 const messageStore = useMessageStore()
+const userStore = useUserStore()
 
 // 全局初始化 WebSocket
-onMounted(() => {
-  // 初始化消息未读数
-  messageStore.loadMessages()
-
-  // 初始化 WebSocket
-  messageStore.initWebSocket()
+onMounted(async () => {
+  // 只有已登录用户才加载消息和初始化 WebSocket
+  if (userStore.token || userStore.roles.length > 0) {
+    messageStore.loadMessages()
+    messageStore.initWebSocket()
+  }
 })
 </script>
 

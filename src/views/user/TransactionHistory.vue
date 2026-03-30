@@ -98,8 +98,9 @@
             range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            :default-time="transactionRangeDefaultTime"
           />
         </el-col>
         <el-col :span="4">
@@ -172,6 +173,12 @@ const chartRef = ref(null)
 let chartInstance = null
 const userStore = useUserStore()
 
+// daterange：开始日 00:00:00，结束日 23:59:59（同一天也能搜到整天流水）
+const transactionRangeDefaultTime = [
+  new Date(2000, 0, 1, 0, 0, 0),
+  new Date(2000, 0, 1, 23, 59, 59),
+]
+
 const goBack = () => {
   router.back()
 }
@@ -185,11 +192,11 @@ const fetchTransactions = async () => {
   try {
     const params = {
       userId: userStore.userId,
-      page: currentPage.value, // 改为 page
-      size: pageSize.value, // 改为 size
+      page: currentPage.value,
+      size: pageSize.value,
       type: filterType.value,
-      startDate: dateRange.value?.[0], // 改为 startDate
-      endDate: dateRange.value?.[1], // 改为 endDate
+      startTime: dateRange.value?.[0] || null,
+      endTime: dateRange.value?.[1] || null,
     }
     const res = await getTransactionHistory(params)
 

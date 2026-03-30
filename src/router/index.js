@@ -33,6 +33,7 @@ const router = createRouter({
           path: 'take-order/:id', // 接单详情页
           name: 'TakeOrderDetail',
           component: () => import('@/views/takeOrder/TakeOrderDetail.vue'),
+          meta: { requiresAuth: true },
         },
         {
           path: 'order-list', // 相对于 '/'，完整路径为 '/order-list'
