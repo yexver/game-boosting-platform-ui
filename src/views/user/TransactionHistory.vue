@@ -87,8 +87,12 @@
         <el-col :span="8">
           <el-select v-model="filterType" placeholder="交易类型" clearable>
             <el-option label="全部" value="" />
-            <el-option label="收入" value="1" />
-            <el-option label="支出" value="8" />
+            <el-option label="充值" value="1" />
+            <el-option label="订单收入" value="2" />
+            <el-option label="退款" value="3" />
+            <el-option label="提现" value="10" />
+            <el-option label="订单支出" value="11" />
+            <el-option label="罚款" value="12" />
           </el-select>
         </el-col>
         <el-col :span="12">
@@ -117,16 +121,16 @@
       >
         <div class="transaction-content">
           <div class="transaction-info">
-            <div class="transaction-title">{{ item.title }}</div>
+            <div class="transaction-title">{{ getTransactionTitle(item.type) }}</div>
             <div class="transaction-time">
-              {{ formatTime(item.createTime) }}
+              {{ formatTime(item.createdAt) }}
             </div>
-            <div class="transaction-desc" v-if="item.description">
-              {{ item.description }}
+            <div class="transaction-desc" v-if="item.remark">
+              {{ item.remark }}
             </div>
           </div>
-          <div class="transaction-amount" :class="item.type">
-            {{ item.type === 'income' ? '+' : '-' }}¥{{
+          <div class="transaction-amount" :class="getTransactionType(item.type)">
+            {{ getTransactionType(item.type) === 'income' ? '+' : '-' }}¥{{
               item.amount.toFixed(2)
             }}
           </div>
@@ -226,28 +230,39 @@ onMounted(() => {
 // 根据交易类型获取标题
 const getTransactionTitle = (type) => {
   const typeMap = {
-    1: '收入',
-    8: '支出',
-    // 可以根据实际业务添加更多类型
+    // 收入类 (1-9)
+    1: '充值',
+    2: '订单收入',
+    3: '退款',
+    // 支出类 (10-19)
+    10: '提现',
+    11: '订单支出',
+    12: '罚款',
+    // 冻结解冻类
+    20: '冻结资金',
+    30: '解冻资金',
+    31: '解冻并扣除',
   }
   return typeMap[type] || '其他'
 }
 
 // 根据交易类型判断收入/支出
+// 收入类：1-9 (充值、订单收入、退款)
+// 支出类：10-19 (提现、订单支出、罚款)
 const getTransactionType = (type) => {
-  return type === 1 ? 'income' : 'expense'
+  return type >= 1 && type <= 9 ? 'income' : 'expense'
 }
 
 // 统计数据
 const totalIncome = computed(() => {
   return transactions.value
-    .filter((item) => item.type === 'income')
+    .filter((item) => getTransactionType(item.type) === 'income')
     .reduce((sum, item) => sum + item.amount, 0)
 })
 
 const totalExpense = computed(() => {
   return transactions.value
-    .filter((item) => item.type === 'expense')
+    .filter((item) => getTransactionType(item.type) === 'expense')
     .reduce((sum, item) => sum + item.amount, 0)
 })
 
@@ -270,11 +285,11 @@ const getChartData = () => {
     })
 
     const income = dayTransactions
-      .filter((item) => item.type === 'income')
+      .filter((item) => getTransactionType(item.type) === 'income')
       .reduce((sum, item) => sum + item.amount, 0)
 
     const expense = dayTransactions
-      .filter((item) => item.type === 'expense')
+      .filter((item) => getTransactionType(item.type) === 'expense')
       .reduce((sum, item) => sum + item.amount, 0)
 
     chartData.push({
