@@ -2,13 +2,19 @@
   <div class="post-order-page">
     <div class="page-header">
       <h2>发布代练订单</h2>
-      <el-button
-        type="primary"
-        class="find-booster-btn"
-        @click="goToFindBooster"
-      >
-        寻找打手
-      </el-button>
+      <div class="header-buttons">
+        <el-button type="warning" @click="showOrderOptimize = true">
+          <el-icon><MagicStick /></el-icon>
+          AI优化订单
+        </el-button>
+        <el-button
+          type="primary"
+          class="find-booster-btn"
+          @click="goToFindBooster"
+        >
+          寻找打手
+        </el-button>
+      </div>
     </div>
 
     <el-form
@@ -166,7 +172,18 @@
 
       <!-- 金额设置区域 -->
       <div class="form-section">
-        <h3 class="section-title">金额设置</h3>
+        <h3 class="section-title">
+          金额设置
+          <el-button
+            type="success"
+            size="small"
+            @click="showPriceRecommend = true"
+            style="margin-left: 16px"
+          >
+            <el-icon><MagicStick /></el-icon>
+            AI智能定价
+          </el-button>
+        </h3>
         <div class="amount-row">
           <el-form-item label="订单金额" prop="price" class="amount-item">
             <el-input-number
@@ -301,6 +318,22 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- AI价格建议组件 -->
+    <PriceRecommend
+      v-model="showPriceRecommend"
+      :initial-data="priceRecommendData"
+      @apply="handleApplyPrice"
+    />
+
+    <!-- AI订单优化组件 -->
+    <OrderOptimize
+      v-model="showOrderOptimize"
+      :title="orderForm.title"
+      :description="orderForm.description"
+      :game-name="selectedGameName"
+      @apply="handleApplyOptimize"
+    />
   </div>
 </template>
 
@@ -311,6 +344,8 @@ import { useRouter } from 'vue-router'
 import { getGameList, getSystemList, getServerList } from '@/api/game/game'
 import { postOrder } from '@/api/order/postOrder'
 import settings from '@/settings'
+import PriceRecommend from '@/views/recommend/PriceRecommend.vue'
+import OrderOptimize from '@/views/recommend/OrderOptimize.vue'
 
 defineOptions({ name: 'PostOrderPage' })
 
@@ -321,6 +356,52 @@ const passwordInputRef = ref()
 const submitting = ref(false)
 const passwordSubmitting = ref(false)
 const passwordDialogVisible = ref(false)
+
+// AI推荐相关
+const showPriceRecommend = ref(false)
+const showOrderOptimize = ref(false)
+
+// 计算属性：获取选中游戏的名称
+const selectedGameName = computed(() => {
+  const game = gameList.value.find((g) => g.id === orderForm.gameId)
+  return game ? game.name : ''
+})
+
+// 价格建议初始数据
+const priceRecommendData = computed(() => ({
+  userId: null,
+  gameId: orderForm.gameId,
+  gameName: selectedGameName.value,
+  systemId: orderForm.systemId,
+  serverId: orderForm.serverId,
+  boostingType: orderForm.boostingType,
+  timeLimit: orderForm.timeLimit,
+}))
+
+// 应用价格建议
+const handleApplyPrice = (data) => {
+  if (data.price) {
+    orderForm.price = data.price
+  }
+  if (data.securityDeposit !== undefined) {
+    orderForm.securityDeposit = data.securityDeposit
+  }
+  if (data.efficiencyDeposit !== undefined) {
+    orderForm.efficiencyDeposit = data.efficiencyDeposit
+  }
+  ElMessage.success('已应用推荐价格')
+}
+
+// 应用订单优化
+const handleApplyOptimize = (data) => {
+  if (data.title) {
+    orderForm.title = data.title
+  }
+  if (data.description) {
+    orderForm.description = data.description
+  }
+  ElMessage.success('已应用优化建议')
+}
 
 // 表单数据
 const orderForm = reactive({
@@ -568,6 +649,11 @@ const handlePriceChange = (value) => {
   margin: 0 0 10px 0;
   color: #333;
   font-size: 28px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
 }
 
 .subtitle {

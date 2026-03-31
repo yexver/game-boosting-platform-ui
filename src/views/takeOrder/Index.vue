@@ -11,6 +11,10 @@
           @keyup.enter="handleSearch"
         />
         <button class="search-btn" @click="handleSearch">搜索</button>
+        <el-button type="success" @click="showTakeRecommend = true" class="ai-recommend-btn">
+          <el-icon><Cpu /></el-icon>
+          AI智能匹配
+        </el-button>
       </div>
 
       <!-- 筛选条件 -->
@@ -268,12 +272,20 @@
         />
       </div>
     </main>
+
+    <!-- AI接单推荐组件 -->
+    <TakeOrderRecommend
+      v-model="showTakeRecommend"
+      :user-profile="userProfile"
+      :available-orders="orderList"
+      @jump="handleJumpToOrder"
+    />
   </div>
 </template>
 
 <script setup>
 import { getGameList, getSystemList, getServerList } from '@/api/game/game'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import {
   ElButton,
   ElButtonGroup,
@@ -282,10 +294,12 @@ import {
   ElTag,
   ElIcon,
 } from 'element-plus'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, Cpu } from '@element-plus/icons-vue'
 import { getOrderList } from '@/api/order/takeOrder'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores'
 import settings from '@/settings'
+import TakeOrderRecommend from '@/views/recommend/TakeOrderRecommend.vue'
 
 const priceOptions = [
   '不限',
@@ -323,6 +337,42 @@ const total = ref(0)
 const searchInput = ref('')
 const loading = ref(false)
 const showFilters = ref(false)
+
+// AI推荐相关
+const showTakeRecommend = ref(false)
+
+// 用户画像（用于AI推荐）
+const userStore = useUserStore()
+const userProfile = computed(() => ({
+  userId: userStore.userId,
+  preferredGameIds: selectedGame.value ? [selectedGame.value] : [],
+  preferredGameNames: selectedGame.value
+    ? [gameOptions.value.find((g) => g.value === selectedGame.value)?.label]
+    : [],
+  maxTimeLimit: 72,
+  minPrice: selectedPrice.value > 0 ? getMinPrice(selectedPrice.value) : null,
+  completionRate: 95,
+  avgIncome: null,
+  boostingType: selectedType.value || null,
+}))
+
+// 根据价格选项获取最低价
+function getMinPrice(priceIndex) {
+  const priceMap = {
+    1: null, // 不限
+    2: null,
+    3: 10,
+    4: 50,
+    5: 100,
+    6: 200,
+  }
+  return priceMap[priceIndex] || null
+}
+
+// AI推荐跳转
+function handleJumpToOrder(order) {
+  router.push(`/take-order/${order.orderId}`)
+}
 
 const typeOptions = [
   { label: '代练', value: 1 },
@@ -618,6 +668,10 @@ watch(selectedSystem, async (systemId) => {
 
 .search-btn:hover {
   background: #337ecc;
+}
+
+.ai-recommend-btn {
+  margin-left: 12px;
 }
 
 .filters {
