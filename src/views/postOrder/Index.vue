@@ -376,6 +376,9 @@ const priceRecommendData = computed(() => ({
   serverId: orderForm.serverId,
   boostingType: orderForm.boostingType,
   timeLimit: orderForm.timeLimit,
+  title: orderForm.title,
+  description: orderForm.description,
+  expectedPrice: orderForm.price,
 }))
 
 // 应用价格建议
@@ -416,7 +419,7 @@ const orderForm = reactive({
   securityDeposit: 0,
   efficiencyDeposit: 0,
   timeLimit: null,
-  password: '', // 添加密码字段
+  password: '',
 })
 
 // 代练类型列表
