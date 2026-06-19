@@ -375,7 +375,7 @@ const priceRecommendData = computed(() => ({
   systemId: orderForm.systemId,
   serverId: orderForm.serverId,
   boostingType: orderForm.boostingType,
-  timeLimit: orderForm.timeLimit,
+  timeLimit: orderForm.timeLimit ?? 48,
   title: orderForm.title,
   description: orderForm.description,
   expectedPrice: orderForm.price,
@@ -407,7 +407,8 @@ const handleApplyOptimize = (data) => {
 }
 
 // 表单数据
-const orderForm = reactive({
+// 初始化默认值
+const defaultForm = {
   gameId: '',
   systemId: '',
   serverId: '',
@@ -418,9 +419,11 @@ const orderForm = reactive({
   price: null,
   securityDeposit: 0,
   efficiencyDeposit: 0,
-  timeLimit: null,
+  timeLimit: 48,
   password: '',
-})
+}
+
+const orderForm = reactive({ ...defaultForm })
 
 // 代练类型列表
 const boostingTypeList = ref([
@@ -616,7 +619,7 @@ const orderRules = {
   ],
   timeLimit: [
     { required: true, message: '请输入代练时限', trigger: 'blur' },
-    { type: 'number', min: 1, message: '时限必须大于0', trigger: 'blur' },
+    { type: 'number', min: 1, message: '时限必须大于0小时', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },

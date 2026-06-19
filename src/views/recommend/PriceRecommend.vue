@@ -24,18 +24,20 @@
             />
           </el-form-item>
 
-          <el-form-item label="当前段位" prop="currentRank">
+          <el-form-item label="订单标题" prop="title">
             <el-input
-              v-model="formData.currentRank"
-              placeholder="如：钻石II、星耀V"
+              v-model="formData.title"
+              placeholder="简单描述需求，如：钻石上王者"
               clearable
             />
           </el-form-item>
 
-          <el-form-item label="目标段位" prop="targetRank">
+          <el-form-item label="订单描述" prop="description">
             <el-input
-              v-model="formData.targetRank"
-              placeholder="如：星耀I、王者"
+              v-model="formData.description"
+              type="textarea"
+              :rows="3"
+              placeholder="详细描述需求，如：要求走平台、有体验服..."
               clearable
             />
           </el-form-item>
@@ -73,19 +75,19 @@
         <div class="price-cards">
           <div class="price-card min-price">
             <div class="price-label">最低价</div>
-            <div class="price-value">¥{{ recommendResult.priceRecommend?.minPrice || 0 }}</div>
+            <div class="price-value">¥{{ recommendResult.minPrice || 0 }}</div>
             <div class="price-desc">成本价</div>
           </div>
 
           <div class="price-card recommended">
             <div class="price-label">推荐价</div>
-            <div class="price-value highlight">¥{{ recommendResult.priceRecommend?.recommendedPrice || 0 }}</div>
+            <div class="price-value highlight">¥{{ recommendResult.recommendedPrice || 0 }}</div>
             <div class="price-desc">性价比最优</div>
           </div>
 
           <div class="price-card max-price">
             <div class="price-label">最高价</div>
-            <div class="price-value">¥{{ recommendResult.priceRecommend?.maxPrice || 0 }}</div>
+            <div class="price-value">¥{{ recommendResult.maxPrice || 0 }}</div>
             <div class="price-desc">市场价</div>
           </div>
         </div>
@@ -94,33 +96,33 @@
         <div class="deposit-info">
           <div class="deposit-item">
             <span class="deposit-label">建议安全保证金：</span>
-            <span class="deposit-value">¥{{ recommendResult.priceRecommend?.securityDeposit || 0 }}</span>
+            <span class="deposit-value">¥{{ recommendResult.securityDeposit || 0 }}</span>
           </div>
           <div class="deposit-item">
             <span class="deposit-label">建议效率保证金：</span>
-            <span class="deposit-value">¥{{ recommendResult.priceRecommend?.efficiencyDeposit || 0 }}</span>
+            <span class="deposit-value">¥{{ recommendResult.efficiencyDeposit || 0 }}</span>
           </div>
         </div>
 
         <!-- 市场参考 -->
-        <div class="market-info" v-if="recommendResult.priceRecommend?.marketAvgPrice">
-          <div class="market-label">市场参考均价：¥{{ recommendResult.priceRecommend.marketAvgPrice }}</div>
+        <div class="market-info" v-if="recommendResult.marketAvgPrice">
+          <div class="market-label">市场参考均价：¥{{ recommendResult.marketAvgPrice }}</div>
         </div>
 
         <!-- 影响因素 -->
-        <div class="factors-section" v-if="recommendResult.priceRecommend?.priceFactors?.length">
+        <div class="factors-section" v-if="recommendResult.priceFactors?.length">
           <div class="factors-title">价格影响因素：</div>
           <ul class="factors-list">
-            <li v-for="(factor, index) in recommendResult.priceRecommend.priceFactors" :key="index">
+            <li v-for="(factor, index) in recommendResult.priceFactors" :key="index">
               {{ factor }}
             </li>
           </ul>
         </div>
 
         <!-- AI分析 -->
-        <div class="analysis-section" v-if="recommendResult.priceRecommend?.analysis">
+        <div class="analysis-section" v-if="recommendResult.analysis">
           <div class="analysis-title">AI分析：</div>
-          <div class="analysis-content">{{ recommendResult.priceRecommend.analysis }}</div>
+          <div class="analysis-content">{{ recommendResult.analysis }}</div>
         </div>
       </div>
     </div>
@@ -165,16 +167,15 @@ const recommendResult = ref(null)
 
 const formData = ref({
   gameName: '',
-  currentRank: '',
-  targetRank: '',
+  title: '',
+  description: '',
   boostingType: 1,
   timeLimit: 48,
 })
 
 const formRules = {
   gameName: [{ required: true, message: '请输入游戏名称', trigger: 'blur' }],
-  currentRank: [{ required: true, message: '请输入当前段位', trigger: 'blur' }],
-  targetRank: [{ required: true, message: '请输入目标段位', trigger: 'blur' }],
+  title: [{ required: true, message: '请输入订单标题', trigger: 'blur' }],
   boostingType: [{ required: true, message: '请选择代练类型', trigger: 'change' }],
   timeLimit: [{ required: true, message: '请输入时限', trigger: 'blur' }],
 }
@@ -188,11 +189,11 @@ watch(
       if (props.initialData.gameName) {
         formData.value.gameName = props.initialData.gameName
       }
-      if (props.initialData.currentRank) {
-        formData.value.currentRank = props.initialData.currentRank
+      if (props.initialData.title) {
+        formData.value.title = props.initialData.title
       }
-      if (props.initialData.targetRank) {
-        formData.value.targetRank = props.initialData.targetRank
+      if (props.initialData.description) {
+        formData.value.description = props.initialData.description
       }
       if (props.initialData.boostingType) {
         formData.value.boostingType = props.initialData.boostingType
@@ -234,11 +235,11 @@ const handleRecommend = async () => {
 }
 
 const handleApply = () => {
-  if (recommendResult.value?.priceRecommend) {
+  if (recommendResult.value) {
     emit('apply', {
-      price: recommendResult.value.priceRecommend.recommendedPrice,
-      securityDeposit: recommendResult.value.priceRecommend.securityDeposit,
-      efficiencyDeposit: recommendResult.value.priceRecommend.efficiencyDeposit,
+      price: recommendResult.value.recommendedPrice,
+      securityDeposit: recommendResult.value.securityDeposit,
+      efficiencyDeposit: recommendResult.value.efficiencyDeposit,
     })
     handleClose()
   }

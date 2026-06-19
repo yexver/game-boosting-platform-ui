@@ -129,8 +129,8 @@
               {{ item.remark }}
             </div>
           </div>
-          <div class="transaction-amount" :class="getTransactionType(item.type)">
-            {{ getTransactionType(item.type) === 'income' ? '+' : '-' }}¥{{
+          <div class="transaction-amount" :class="item.transactionType">
+            {{ item.transactionType === 'income' ? '+' : '-' }}¥{{
               item.amount.toFixed(2)
             }}
           </div>
@@ -207,7 +207,7 @@ const fetchTransactions = async () => {
     transactions.value = (res.data.records || []).map((item) => ({
       ...item,
       title: getTransactionTitle(item.type),
-      type: getTransactionType(item.type),
+      transactionType: getTransactionType(item.type),
       createTime: item.createdAt,
       description: item.remark,
     }))
@@ -247,22 +247,24 @@ const getTransactionTitle = (type) => {
 }
 
 // 根据交易类型判断收入/支出
-// 收入类：1-9 (充值、订单收入、退款)
-// 支出类：10-19 (提现、订单支出、罚款)
+// 收入类：1-9 (充值、订单收入、退款) + 30 (解冻资金)
+// 支出类：10-19 (提现、订单支出、罚款) + 20 (冻结资金) + 31 (解冻并扣除)
 const getTransactionType = (type) => {
-  return type >= 1 && type <= 9 ? 'income' : 'expense'
+  if (type >= 1 && type <= 9) return 'income' // 充值、订单收入、退款
+  if (type === 30) return 'income' // 解冻资金（冻结转余额）
+  return 'expense' // 提现、订单支出、罚款、冻结资金、解冻并扣除
 }
 
 // 统计数据
 const totalIncome = computed(() => {
   return transactions.value
-    .filter((item) => getTransactionType(item.type) === 'income')
+    .filter((item) => item.transactionType === 'income')
     .reduce((sum, item) => sum + item.amount, 0)
 })
 
 const totalExpense = computed(() => {
   return transactions.value
-    .filter((item) => getTransactionType(item.type) === 'expense')
+    .filter((item) => item.transactionType === 'expense')
     .reduce((sum, item) => sum + item.amount, 0)
 })
 
@@ -285,11 +287,11 @@ const getChartData = () => {
     })
 
     const income = dayTransactions
-      .filter((item) => getTransactionType(item.type) === 'income')
+      .filter((item) => item.transactionType === 'income')
       .reduce((sum, item) => sum + item.amount, 0)
 
     const expense = dayTransactions
-      .filter((item) => getTransactionType(item.type) === 'expense')
+      .filter((item) => item.transactionType === 'expense')
       .reduce((sum, item) => sum + item.amount, 0)
 
     chartData.push({

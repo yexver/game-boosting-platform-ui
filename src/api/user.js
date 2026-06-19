@@ -47,7 +47,7 @@ export function uploadAvatar(file) {
 // 支付宝充值接口
 export function alipayPay({ url, userId, price }) {
   return request({
-    url: `/server-user/alipay/pay?url=${encodeURIComponent(url)}&userId=${userId}&price=${price}`,
+    url: `/server-account/alipay/pay?url=${encodeURIComponent(url)}&userId=${userId}&price=${price}`,
     method: 'get',
     responseType: 'text', // 期望返回 HTML
   })
@@ -56,7 +56,7 @@ export function alipayPay({ url, userId, price }) {
 // 提现接口
 export function withdraw({ userId, amount, password }) {
   return request({
-    url: '/server-user/alipay/withdraw',
+    url: '/server-account/alipay/withdraw',
     method: 'post',
     data: { userId, amount, password },
   })
